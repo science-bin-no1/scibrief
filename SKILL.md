@@ -256,23 +256,47 @@ html_content = '''<!DOCTYPE html>
     <!-- scibrief Content Here -->
 </body>
 </html>'''
+
+Path("scibrief.html").write_text(html_content, encoding="utf-8")
 ```
 
 2. **Generate PDF using Playwright**:
 
+One-time setup (macOS, Linux, Windows):
+
+```bash
+pip install playwright
+playwright install chromium
+```
+
 ```python
+import os
+from pathlib import Path
 from playwright.sync_api import sync_playwright
 
+html_path = Path("scibrief.html")   # the HTML written in step 1
+pdf_path = Path("scibrief.pdf")     # where the PDF should land
+
+# Playwright resolves its own bundled Chromium on every platform, so no path is
+# hardcoded here. Two optional environment variables cover the exceptions:
+#   PLAYWRIGHT_CHROMIUM_PATH - point at a specific binary (a preinstalled browser
+#                              in a container, or a system Chrome)
+#   PLAYWRIGHT_NO_SANDBOX    - set to any value when running as root in a
+#                              container, where Chromium's sandbox fails to start
+launch_kwargs = {}
+if os.environ.get("PLAYWRIGHT_CHROMIUM_PATH"):
+    launch_kwargs["executable_path"] = os.environ["PLAYWRIGHT_CHROMIUM_PATH"]
+if os.environ.get("PLAYWRIGHT_NO_SANDBOX"):
+    launch_kwargs["args"] = ["--no-sandbox", "--disable-setuid-sandbox"]
+
 with sync_playwright() as p:
-    browser = p.chromium.launch(
-        executable_path="/root/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome",
-        args=['--no-sandbox', '--disable-setuid-sandbox']
-    )
+    browser = p.chromium.launch(**launch_kwargs)
     page = browser.new_page()
-    page.goto("file:///path/to/html", wait_until="networkidle")
-    
+    # as_uri() builds a correct file:// URL on every OS, including Windows drive letters
+    page.goto(html_path.resolve().as_uri(), wait_until="networkidle")
+
     page.pdf(
-        path="/output/path/to/scibrief.pdf",
+        path=str(pdf_path),
         format="A4",
         margin={"top": "2cm", "bottom": "2cm", "left": "1.5cm", "right": "1.5cm"},
         print_background=True,
