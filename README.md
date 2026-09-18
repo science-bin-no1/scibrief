@@ -125,10 +125,19 @@ When I type `tldr:` followed by a URL or paper, use the scibrief skill.
 
 `SKILL.md` includes a Playwright + HTML recipe for rendering a brief as a styled A4 PDF with full emoji support, color-coded zones (warm for mechanism, cool for bottom line, red for caveats), and page headers/footers.
 
-> **Note:** the PDF section hardcodes a Linux Chromium path
-> (`/root/.cache/ms-playwright/...`). On macOS or Windows, drop the
-> `executable_path` argument and let Playwright resolve its own browser, or point
-> it at your local Chrome.
+The recipe runs unchanged on macOS, Linux, and Windows — Playwright resolves its own bundled Chromium, and file paths are built with `pathlib` rather than hardcoded. Setup is:
+
+```bash
+pip install playwright
+playwright install chromium
+```
+
+Two optional environment variables cover the exceptions:
+
+| Variable | When to set it |
+|---|---|
+| `PLAYWRIGHT_CHROMIUM_PATH` | Point at a specific binary — a browser preinstalled in a container, or your system Chrome |
+| `PLAYWRIGHT_NO_SANDBOX` | Running as root in a container, where Chromium's sandbox fails to start |
 
 ## Repository contents
 
